@@ -16,6 +16,9 @@ def load_config(app: Flask, config_name: str = 'development'):
     config = {
         "development": all_config_dict['DevelopmentConfig'],
     }
+
+    app.config['TEMP_FILE_UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'temp_file_storage')
+
     app.config['DEBUG'] = config[config_name]['DEBUG']
     app.config['SQLALCHEMY_DATABASE_URI'] = config[config_name]['SQLALCHEMY_DATABASE_URI']
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = config[config_name]['SQLALCHEMY_TRACK_MODIFICATIONS']
@@ -24,7 +27,7 @@ def load_config(app: Flask, config_name: str = 'development'):
     app.config['CELERY_RESULT_BACKEND'] = config[config_name]['CELERY_RESULT_BACKEND']
 
     app.config['GOOGLE_API_KEY']   = config[config_name]['GCP_API_key']
-    app.configp['GOOGLE_MODEL_NAME'] = config[config_name]['GCP_MODEL_NAME']
+    app.config['GOOGLE_MODEL_NAME'] = config[config_name]['GCP_MODEL_NAME']
 
     app.secret_key = str(uuid.uuid1())
     return app
