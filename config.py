@@ -17,5 +17,14 @@ def load_config(app: Flask, config_name: str = 'development'):
         "development": all_config_dict['DevelopmentConfig'],
     }
     app.config['DEBUG'] = config[config_name]['DEBUG']
+    app.config['SQLALCHEMY_DATABASE_URI'] = config[config_name]['SQLALCHEMY_DATABASE_URI']
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = config[config_name]['SQLALCHEMY_TRACK_MODIFICATIONS']
+
+    app.config['CELERY_BROKER_URL'] = config[config_name]['CELERY_BROKER_URL']
+    app.config['CELERY_RESULT_BACKEND'] = config[config_name]['CELERY_RESULT_BACKEND']
+
+    app.config['GOOGLE_API_KEY']   = config[config_name]['GCP_API_key']
+    app.configp['GOOGLE_MODEL_NAME'] = config[config_name]['GCP_MODEL_NAME']
+
     app.secret_key = str(uuid.uuid1())
     return app
