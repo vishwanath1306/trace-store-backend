@@ -5,9 +5,9 @@ from flask import current_app as app
 
 from models.session import SessionManager
 from models.status_kv import StatusKV
-from modules.session.composed import verify_session_create, verify_session_validity
+from modules.session.composed import verify_session_create, verify_manual_embedding_generation
 
-from tasks.embeddings_gen import save_and_generate_embedding
+from tasks.embeddings_gen import save_and_generate_embedding, manual_embedding_generation
 
 from utils.exceptions import SessionNotFoundException
 from utils.helpers import generate_id, store_file
@@ -56,6 +56,7 @@ def get_session_details():
         return jsonify({'message': 'Session not found'}), 404
     return jsonify(session_manager.to_dict()), 200
 
+
 @session_bp.route('/current-status', methods=['GET'])
 def get_current_status():
     sess_id = request.args.get('session_id')
@@ -77,6 +78,7 @@ def get_current_status():
 
 
 @session_bp.route('/manual-embedding-generation', methods=['POST'])
+@verify_manual_embedding_generation
 def manual_embedding_generation(session_details: Dict):
     sess_id = generate_id()
     session_manager = SessionManager(
@@ -86,7 +88,10 @@ def manual_embedding_generation(session_details: Dict):
         embedding_method=session_details['embedding_method'],
         application_name=session_details['application_name'],
     )
+    path_value = f"{app.config['TEMP_FILE_UPLOAD_FOLDER']}/{session_details['app_to_embedding']}/"
+    manual_embedding_generation.delay(sess_id, path_value)
     value, message = session_manager.create_new_session()
+
     if not value:
         return jsonify({'message': message['message']}), 400
     else:

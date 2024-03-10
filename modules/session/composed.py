@@ -7,6 +7,7 @@ from typing import Dict, List, Tuple
 from flask import request
 from models.session import EmbeddingMethod, VectorStore
 from models.session import SessionManager
+from utils.helpers import construct_app_to_embedding
 
 def verify_session_create(func):
     @wraps(func)
@@ -51,7 +52,10 @@ def verify_manual_embedding_generation(func):
             session_details[field] = request_body.get(field, None)
             if session_details[field] is None:
                 return {'message': f'{field} is required'}, 400
+        
         session_details['vector_database'] = VectorStore(session_details['vector_database'])
         session_details['embedding_method'] = EmbeddingMethod(session_details['embedding_method'])
+        session_details['app_to_embedding'] = construct_app_to_embedding(str.lower(session_details['application_name']), str.lower(session_details['embedding_method'].value))
+        
         return func(session_details=session_details)
     return decorated_function

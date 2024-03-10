@@ -115,3 +115,32 @@ class SessionManager(database.Model):
         session = SessionManager.query.filter_by(id=session_id).first()
         if session:
             return session.current_status
+        
+class SessionToLogFilePath(database.Model):
+    ___tablename__ = 'session_to_log_file_path'
+
+    id = database.Column(database.String(128), primary_key=True, nullable=False)
+    session_id = database.Column(database.String(128), database.ForeignKey('session_manager.id'), nullable=False)
+    log_file_path = database.Column(database.String(256), nullable=False)
+
+    def __init__(self, id, session_id, log_file_path):
+        self.id = id
+        self.session_id = session_id
+        self.log_file_path = log_file_path
+    
+    def create_new_session_to_log_file_path(self):
+        try: 
+            database.session.add(self)
+            database.session.commit()
+        except IntegrityError as e:
+            from utils.helpers import extract_sqlalchemy_errors
+            database.session.rollback()
+            message: str = f"Session: {extract_sqlalchemy_errors(e._message)}"
+            message_dict = {
+                "message": message
+            }
+            return False, message_dict
+        message_dict = {
+            "message": "Session To File Path created successfully"
+        }
+        return True, message_dict

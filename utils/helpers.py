@@ -1,5 +1,8 @@
+import glob
+import json
 import random
 import uuid
+
 
 def generate_id():
     return str(uuid.uuid4())
@@ -30,3 +33,10 @@ def return_index_name_from_filename(filename: str) -> str:
 
 def construct_app_to_embedding(app_name: str, embedding: str) -> str:
     return f"{app_name}_{embedding}"
+
+def get_all_json(folder_path: str):
+    return glob.glob(f"{folder_path}/*.json")
+
+def read_json_file(file_path: str):
+    with open(file_path, 'r') as file:
+        return json.load(file)
