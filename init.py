@@ -3,6 +3,7 @@ from flask_cors import CORS
 
 from config import load_config
 from models import database
+from services.redis_service import cache
 from tasks import celery, initialize_celery
 
 def initialize_flask_app(name: str, config_name: str = 'development'):
@@ -10,6 +11,7 @@ def initialize_flask_app(name: str, config_name: str = 'development'):
     app = load_config(app, config_name)
     CORS(app)
     database.init_app(app)
+    cache.init_app(app)
     with app.app_context():
         from modules.session.session_routes import session_bp
         

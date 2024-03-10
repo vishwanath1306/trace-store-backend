@@ -8,28 +8,6 @@ from sqlalchemy.exc import IntegrityError
 from models import database
 from utils.exceptions import SessionNotFoundException
 
-class ExampleTable(database.Model):
-    __tablename__ = 'example_table'
-    id = database.Column(database.Integer, primary_key=True)
-    name = database.Column(database.String(100), nullable=False)
-    created_at = database.Column(database.DateTime, default=datetime.datetime.utcnow)
-    updated_at = database.Column(database.DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
-
-    def __init__(self, id, name: str):
-        self.id = id
-        self.name = name
-
-    def __repr__(self):
-        return f'<ExampleTable {self.name}>'
-
-    def to_dict(self) -> Dict:
-        return {
-            'id': self.id,
-            'name': self.name,
-            'created_at': self.created_at,
-            'updated_at': self.updated_at
-        }
-
 class EmbeddingMethod(enum.Enum):
     GOOGLE = 'Google'
     OPENAI = 'OpenAI'
@@ -50,18 +28,22 @@ class SessionManager(database.Model):
     log_file_path = database.Column(database.String(256), nullable=False)
     vector_store = database.Column(database.Enum(VectorStore), nullable=False)
     embedding_method = database.Column(database.Enum(EmbeddingMethod), nullable=False)
+    application_name = database.Column(database.String(128), nullable=False)
+    current_status = database.Column(database.Boolean, default=False)
 
     created_at = database.Column(database.DateTime, default=datetime.datetime.utcnow)
     updated_at = database.Column(database.DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
-    def __init__(self, id: str, name: str, log_file_path: str, vector_store: VectorStore, embedding_method: EmbeddingMethod):
+    def __init__(self, id: str, name: str, log_file_path: str, vector_store: VectorStore, embedding_method: EmbeddingMethod, application_name: str):
         self.id = id
         self.name = name
         self.log_file_path = log_file_path
         self.vector_store = vector_store
         self.embedding_method = embedding_method
-    
-    def create_new_user(self) -> Tuple[bool, Dict]:
+        self.current_status = False
+        self.application_name = application_name
+
+    def create_new_session(self) -> Tuple[bool, Dict]:
         try: 
             database.session.add(self)
             database.session.commit()
@@ -77,3 +59,59 @@ class SessionManager(database.Model):
             "message": "Session created successfully"
         }
         return True, message_dict
+    
+    @staticmethod
+    def get_folder_path(session_id: str) -> str:
+        folder_path = SessionManager.query.filter_by(id=session_id).first()
+        if folder_path is None:
+            raise SessionNotFoundException
+        
+        return folder_path.to_dict()['log_file_path']
+    
+    @staticmethod
+    def get_session_details(session_id: str) -> Union[Dict, None]:
+        session = SessionManager.query.filter_by(id=session_id).first()
+
+        if session is None:
+            raise SessionNotFoundException
+        return session
+    
+    def to_dict(self) -> Dict:
+        return {
+            'id': self.id,
+            'name': self.name,
+            'log_file_path': self.log_file_path,
+            'vector_store': self.vector_store.value,
+            'embedding_method': self.embedding_method.value,
+            'created_at': self.created_at,
+            'updated_at': self.updated_at
+        }
+    
+    def update_status(self, status: bool) -> None:
+        self.current_status = status
+        
+        try:             
+            database.session.commit()
+            
+        except IntegrityError as e:
+            from utils.helpers import extract_sqlalchemy_errors
+            database.session.rollback()
+            message: str = f"Session: {extract_sqlalchemy_errors(e._message)}"
+            message_dict = {
+                "message": message
+            }
+            return False, message_dict
+
+    @staticmethod
+    def check_session_details(session_id):
+        session = SessionManager.query.filter_by(id=session_id).first()
+        if session: 
+            return True
+        else:
+            return False
+    
+    @staticmethod
+    def check_session_status(session_id):
+        session = SessionManager.query.filter_by(id=session_id).first()
+        if session:
+            return session.current_status

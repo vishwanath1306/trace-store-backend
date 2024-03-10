@@ -3,4 +3,5 @@ result_backend = 'redis://localhost:6379/1'
 
 imports = (
     'tasks.task_hw',
+    'tasks.embeddings_gen',
 )

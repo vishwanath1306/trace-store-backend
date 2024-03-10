@@ -29,5 +29,12 @@ def load_config(app: Flask, config_name: str = 'development'):
     app.config['GOOGLE_API_KEY']   = config[config_name]['GCP_API_key']
     app.config['GOOGLE_MODEL_NAME'] = config[config_name]['GCP_MODEL_NAME']
 
+    app.config['JOBS_STORAGE'] = {}
+    app.config['JOBS_STORAGE']['HOST'] = config[config_name]['JOBS_STORAGE']['HOST']
+    app.config['JOBS_STORAGE']['PORT'] = config[config_name]['JOBS_STORAGE']['PORT']
+    app.config['JOBS_STORAGE']['DB'] = config[config_name]['JOBS_STORAGE']['DB']
+
+
+
     app.secret_key = str(uuid.uuid1())
     return app

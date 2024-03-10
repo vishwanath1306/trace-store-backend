@@ -17,3 +17,8 @@ def generate_random_float_array():
 
 def store_file(file, file_path):
     file.save(file_path)
+
+def read_file_content(file_path):
+    with open(file_path, 'r') as file:
+        return file.readlines()
+    

@@ -297,3 +297,4 @@ marajo_Env
 marajaoEnv
 
 # End of https://www.gitignore.io/api/git,flask,python,pycharm,virtualenv
+static/embeddings/*

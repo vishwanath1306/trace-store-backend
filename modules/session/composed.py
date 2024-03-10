@@ -6,11 +6,12 @@ from typing import Dict, List, Tuple
 
 from flask import request
 from models.session import EmbeddingMethod, VectorStore
+from models.session import SessionManager
+
 def verify_session_create(func):
     @wraps(func)
     def decorated_function(*args, **kwargs):
-        print(request.form)
-        required_fields = ['session_name', 'vector_database', 'embedding_method']
+        required_fields = ['session_name', 'vector_database', 'embedding_method', 'application_name']
         file_field = 'request_file'
         session_details = {}
         for field in required_fields:
@@ -26,3 +27,16 @@ def verify_session_create(func):
 
         return func(session_details=session_details)
     return decorated_function
+
+
+def verify_session_validity(func):
+    @wraps(func)
+    def decorated_function(*args, **kwargs):
+        session_id = request.args.get('session_id')
+        session_exists = SessionManager.check_session_details(session_id)
+        if session_exists:
+            return func(session_id=session_id)
+        else:
+            return func(session_id=False)
+    return decorated_function
+
