@@ -4,6 +4,7 @@ from flask_cors import CORS
 from config import load_config
 from models import database
 from services.redis_service import cache
+from services.milvus_service import milvus_conn
 from tasks import celery, initialize_celery
 
 def initialize_flask_app(name: str, config_name: str = 'development'):
@@ -12,6 +13,8 @@ def initialize_flask_app(name: str, config_name: str = 'development'):
     CORS(app)
     database.init_app(app)
     cache.init_app(app)
+    milvus_conn.establish_connection(app)
+
     with app.app_context():
         from modules.session.session_routes import session_bp
         

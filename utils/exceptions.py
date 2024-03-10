@@ -34,3 +34,10 @@ def RedisRuntimeError(Exception):
 
     def __str__(self):
         return self.error
+    
+def MilvusConnectionError(Exception):
+    def __init__(self, error: str):
+        self.error = f"{error}"
+
+    def __str__(self):
+        return self.error

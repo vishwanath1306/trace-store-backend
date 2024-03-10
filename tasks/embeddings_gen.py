@@ -39,8 +39,9 @@ def save_and_generate_embedding(session_id: str, log_file_path: str):
 
     
 @celery.task
-def generate_from_vector_store(session_id: str, log_file_path: str):
+def generate_for_vector_store(session_id: str, log_file_path: str):
     pass
+
 
 @celery.task
 def check_if_completed(session_id: str, count_of_lines: int):

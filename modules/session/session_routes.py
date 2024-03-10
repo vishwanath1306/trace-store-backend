@@ -32,6 +32,7 @@ def create_session(session_details: Dict):
         application_name=session_details['application_name'],
         log_file_path=file_name,
     )
+
     store_file(session_details['request_file'], file_name)
     value, message = session_manager.create_new_session()
     save_and_generate_embedding.delay(sess_id, f"{app.config['TEMP_FILE_UPLOAD_FOLDER']}/{sess_id}.log")
@@ -76,5 +77,21 @@ def get_current_status():
 
 
 @session_bp.route('/manual-embedding-generation', methods=['POST'])
-def manual_embedding_generation():
-    pass
+def manual_embedding_generation(session_details: Dict):
+    sess_id = generate_id()
+    session_manager = SessionManager(
+        id=sess_id,
+        name=session_details['session_name'],
+        vector_store=session_details['vector_database'],
+        embedding_method=session_details['embedding_method'],
+        application_name=session_details['application_name'],
+    )
+    value, message = session_manager.create_new_session()
+    if not value:
+        return jsonify({'message': message['message']}), 400
+    else:
+        message_dict = {
+            "message": message['message'],
+            "session_id": sess_id
+        }
+        return jsonify(message_dict), 201

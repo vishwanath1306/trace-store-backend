@@ -23,7 +23,6 @@ class SemSearchRedis(object):
     
         
     def init_app(self, app: Flask):
-        print(app.config['JOBS_STORAGE']['HOST'], app.config['JOBS_STORAGE']['PORT'], app.config['JOBS_STORAGE']['DB'])
         try:
             self.jobs_storage = self._create_connection(
                 app.config['JOBS_STORAGE']['HOST'],

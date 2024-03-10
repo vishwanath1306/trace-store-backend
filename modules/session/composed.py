@@ -40,3 +40,18 @@ def verify_session_validity(func):
             return func(session_id=False)
     return decorated_function
 
+
+def verify_manual_embedding_generation(func):
+    @wraps(func)
+    def decorated_function(*args, **kwargs):
+        required_fields = ['session_name', 'vector_database', 'embedding_method', 'application_name']
+        request_body = request.get_json()
+        session_details = {}
+        for field in request_body:
+            session_details[field] = request_body.get(field, None)
+            if session_details[field] is None:
+                return {'message': f'{field} is required'}, 400
+        session_details['vector_database'] = VectorStore(session_details['vector_database'])
+        session_details['embedding_method'] = EmbeddingMethod(session_details['embedding_method'])
+        return func(session_details=session_details)
+    return decorated_function
