@@ -1,4 +1,5 @@
 import time
+from typing import List
 
 from tasks import celery
 
@@ -44,11 +45,11 @@ def save_and_generate_embedding(session_id: str, log_file_path: str):
 
 @celery.task
 def write_embedding_to_db_milvus(session_id: str, file_name: str):
-
+    
     file_data = read_json_file(file_name)
         
     log_lines = []    
-    pg_milvus_session_connect_list = []
+    pg_milvus_session_connect_list: List[PGMilvusSesssionConnect] = []
 
     pg_to_milvus_id = generate_id()
     collection_name, index_name = collection_index_name_from_filename(file_name)
@@ -59,13 +60,14 @@ def write_embedding_to_db_milvus(session_id: str, file_name: str):
         session_id=session_id
     )
     pg_to_milvus.create_new_pg_milvus()
+    print(f"Processing file: {file_name} with lines: {len(file_data)}")
 
     for data in file_data:
 
         log_to_embedding_id = generate_id()
 
         log_to_embedding = LogToEmbedding(
-            id=generate_id(),
+            id=log_to_embedding_id,
             session_id=session_id,
             log_text=data['text'],
             embedding=data['embedding']
@@ -79,7 +81,6 @@ def write_embedding_to_db_milvus(session_id: str, file_name: str):
         )
         
         log_lines.append(log_to_embedding)
-        time.sleep(10)
         pg_milvus_session_connect_list.append(pg_milvus_session_connect)
 
     log_to_embedding.add_multiple_log_to_embedding(log_lines)
