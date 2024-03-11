@@ -1,9 +1,10 @@
 import datetime
 import enum
-from typing import Dict, Union, Tuple
+from typing import Dict, Union, Tuple, List
 
 from flask import current_app as app
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 from models import database
 
@@ -44,3 +45,8 @@ class LogToEmbedding(database.Model):
             "message": "Log to embedding created successfully"
         }
         return True, message_dict
+    
+
+    def add_multiple_log_to_embedding(self, log_to_embedding_list: List['LogToEmbedding']):
+        database.session.add_all(log_to_embedding_list)
+        database.session.commit()

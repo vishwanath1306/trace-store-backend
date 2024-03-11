@@ -25,16 +25,17 @@ def read_file_content(file_path):
     with open(file_path, 'r') as file:
         return file.readlines()
 
-def return_index_name_from_filename(filename: str) -> str:
+def collection_index_name_from_filename(filename: str) -> str:
     last_file = filename.split('/')[-1]
     index_name = last_file.split('.')[0]
-    return f"index-{index_name}"
+    return f"collection-{index_name}", f"index-{index_name}"
 
 
 def construct_app_to_embedding(app_name: str, embedding: str) -> str:
     return f"{app_name}_{embedding}"
 
 def get_all_json(folder_path: str):
+    print(f"Reading: {folder_path}")
     return glob.glob(f"{folder_path}/*.json")
 
 def read_json_file(file_path: str):

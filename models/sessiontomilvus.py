@@ -43,5 +43,47 @@ class PostgresToMilvus(database.Model):
             "message": "Postgres to Milvus created successfully"
         }
         return True, message_dict
+
+    def add_multiple_postgres_to_milvus(self, postgres_to_milvus_list):
+        database.session.add_all(postgres_to_milvus_list)
+        database.session.commit()
+
+
+class PGMilvusSesssionConnect(database.Model):
+
+    __tablename__ = 'pg_milvus_session_connect'
+
+    id = database.Column(database.String(128), primary_key=True, nullable=False)
+    session_id = database.Column(database.String(128), database.ForeignKey('session_manager.id'), nullable=False)
+    log_to_embedding_id = database.Column(database.String(128), database.ForeignKey('log_to_embedding.id'), nullable=False)
+    pg_to_milvus_id = database.Column(database.String(128), database.ForeignKey('postgres_to_milvus.id'), nullable=False)
+
+    def __init__(self, id, session_id, log_to_embedding_id, pg_to_milvus_id):
+        self.id = id
+        self.session_id = session_id
+        self.log_to_embedding_id = log_to_embedding_id
+        self.pg_to_milvus_id = pg_to_milvus_id
+    
+    def create_new_pg_milvus_session_connect(self):
+        try:
+            database.session.add(self)
+            database.session.commit()
+        except IntegrityError as e:
+            from utils.helpers import extract_sqlalchemy_errors
+            database.session.rollback()
+            message: str = f"PGMilvusSesssionConnect: {extract_sqlalchemy_errors(e._message)}"
+            message_dict = {
+                "message": message
+            }
+            return False, message_dict
+
+        message_dict = {
+            "message": "PGMilvusSesssionConnect created successfully"
+        }
+        return True, message_dict
+
+    def add_multiple_pg_milvus_session_connect(self, pg_milvus_session_connect_list):
+        database.session.add_all(pg_milvus_session_connect_list)
+        database.session.commit()
     
     

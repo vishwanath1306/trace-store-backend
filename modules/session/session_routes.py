@@ -7,7 +7,7 @@ from models.session import SessionManager
 from models.status_kv import StatusKV
 from modules.session.composed import verify_session_create, verify_manual_embedding_generation
 
-from tasks.embeddings_gen import save_and_generate_embedding, manual_embedding_generation
+from tasks.embeddings_gen import save_and_generate_embedding, load_existing_embedding
 
 from utils.exceptions import SessionNotFoundException
 from utils.helpers import generate_id, store_file
@@ -29,8 +29,7 @@ def create_session(session_details: Dict):
         name=session_details['session_name'],
         vector_store=session_details['vector_database'],
         embedding_method=session_details['embedding_method'],
-        application_name=session_details['application_name'],
-        log_file_path=file_name,
+        application_name=session_details['application_name']
     )
 
     store_file(session_details['request_file'], file_name)
@@ -88,9 +87,13 @@ def manual_embedding_generation(session_details: Dict):
         embedding_method=session_details['embedding_method'],
         application_name=session_details['application_name'],
     )
-    path_value = f"{app.config['TEMP_FILE_UPLOAD_FOLDER']}/{session_details['app_to_embedding']}/"
-    manual_embedding_generation.delay(sess_id, path_value)
+    path_value = f"{app.config['EMBEDDING_FOLDER']}/{session_details['app_to_embedding']}/"
+    
+    
+    
     value, message = session_manager.create_new_session()
+
+    load_existing_embedding.delay(sess_id, path_value)
 
     if not value:
         return jsonify({'message': message['message']}), 400
