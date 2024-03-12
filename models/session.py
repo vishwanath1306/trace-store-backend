@@ -78,7 +78,6 @@ class SessionManager(database.Model):
         return {
             'id': self.id,
             'name': self.name,
-            'log_file_path': self.log_file_path,
             'vector_store': self.vector_store.value,
             'embedding_method': self.embedding_method.value,
             'created_at': self.created_at,
@@ -113,3 +112,11 @@ class SessionManager(database.Model):
         session = SessionManager.query.filter_by(id=session_id).first()
         if session:
             return session.current_status
+
+    @staticmethod
+    def get_all_session():
+        sessions = SessionManager.query.all()
+        sessions_list = []
+        for session in sessions:
+            sessions_list.append(session.to_dict())
+        return sessions_list

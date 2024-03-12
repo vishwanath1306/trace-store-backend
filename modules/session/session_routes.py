@@ -103,3 +103,9 @@ def manual_embedding_generation(session_details: Dict):
             "session_id": sess_id
         }
         return jsonify(message_dict), 201
+
+
+@session_bp.route('/get-all-sessions', methods=['GET'])
+def get_all_sessions():
+    all_sessions = SessionManager.get_all_session()
+    return jsonify(all_sessions), 200
