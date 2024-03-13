@@ -5,9 +5,10 @@ from flask import current_app as app
 
 from models.session import SessionManager
 from models.status_kv import StatusKV
+from models.sessiontomilvus import PostgresToMilvus, PGMilvusSesssionConnect
 from modules.session.composed import verify_session_create, verify_manual_embedding_generation
 
-from tasks.embeddings_gen import save_and_generate_embedding, load_existing_embedding
+from tasks.embeddings_gen import save_and_generate_embedding, load_existing_embedding, load_into_milvus_collection
 
 from utils.exceptions import SessionNotFoundException
 from utils.helpers import generate_id, store_file
@@ -109,3 +110,34 @@ def manual_embedding_generation(session_details: Dict):
 def get_all_sessions():
     all_sessions = SessionManager.get_all_session()
     return jsonify(all_sessions), 200
+
+
+@session_bp.route('/create-milvus-embedding', methods=['POST'])
+def create_milvus_embedding():
+    request_data = request.get_json()
+
+    session_id = request_data.get('session_id')
+    
+    pg_milvus_entries = load_into_milvus_collection(session_id)
+
+    message_dict = {
+        "message": pg_milvus_entries
+    }
+    return jsonify(message_dict), 201
+
+
+@session_bp.route('/delete-milvus-collections', methods=['POST'])
+def delete_milvus_collections():
+
+    request_data = request.get_json()
+    session_id = request_data.get('session_id')
+
+    pg_milvus_entries = PostgresToMilvus.get_mutiple_pg_milvus(session_id)
+    for pg_milvus in pg_milvus_entries:
+        pg_milvus.drop_milvus_collection()
+    
+    message_dict = {
+        "message": "Collections deleted"
+    }
+    return jsonify(message_dict), 200
+

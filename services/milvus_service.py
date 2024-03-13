@@ -12,12 +12,12 @@ class SemSearchMilvus(object):
     
     def establish_connection(self, app: Flask):
         try:
-            connections.connect(alias="semantic_search", 
+            connections.connect(alias="default", 
                     host=app.config['MILVUS_HOST'], 
                     port=app.config['MILVUS_PORT'])
         except Exception as e:
             raise MilvusConnectionError(f"Milvus connection failed due to: {e}")
-
+        
     def get_default_fields(self):
         fields = [
             FieldSchema(name="pk", dtype=DataType.VARCHAR, is_primary=True, auto_id=False, max_length=128),
@@ -26,12 +26,12 @@ class SemSearchMilvus(object):
         ]
         return fields
 
-    def create_collection(collection_name, fields, description, consistency_level="Strong"):
-        schema = CollectionSchema(fields=fields, description=description)
+    def create_collection(self, collection_name, description, consistency_level="Strong"):
+        schema = CollectionSchema(fields=self.get_default_fields(), description=description)
         collection = Collection(name=collection_name, schema=schema, consistency_level=consistency_level)
         return collection
     
-    def insert_data(collection, entities):
+    def insert_data(self, collection, entities):
         ins_data = collection.insert(entities)
         collection.flush()
         print(
@@ -53,6 +53,7 @@ class SemSearchMilvus(object):
 
         results = collection.search(
             search_vectors, search_field, search_params, limit=10, output_fields=["log_line"])
+        return results
     
     def delete_collection(collection):
         collection.drop()
@@ -62,8 +63,11 @@ class SemSearchMilvus(object):
         collection.delete(expr)
         print(f"Deleted entities where {expr}")
 
-    def drop_collection(collection_name):
+    def drop_collection(self, collection_name):
         utility.drop_collection(collection_name)
-        print(f"Dropped collection '{collection_name}'.")
-        
+        return True
+    
+    def get_collection(self, collection_name: str):
+        return utility.get_collection(collection_name)
+    
 milvus_conn = SemSearchMilvus()

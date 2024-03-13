@@ -28,7 +28,7 @@ def read_file_content(file_path):
 def collection_index_name_from_filename(filename: str) -> str:
     last_file = filename.split('/')[-1]
     index_name = last_file.split('.')[0]
-    return f"collection-{index_name}", f"index-{index_name}"
+    return f"collection_{index_name}", f"index_{index_name}"
 
 
 def construct_app_to_embedding(app_name: str, embedding: str) -> str:

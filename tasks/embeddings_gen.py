@@ -1,7 +1,10 @@
 import time
 from typing import List
 
+from flask import current_app as app
+
 from tasks import celery
+
 
 from models.logtoembedding import LogToEmbedding
 from models.status_kv import StatusKV
@@ -9,7 +12,10 @@ from models.session import SessionManager, EmbeddingMethod, VectorStore
 from models.sessiontomilvus import PostgresToMilvus, PGMilvusSesssionConnect
 from modules.integrations.google_integration import google_text_embedding
 
+from services.milvus_service import milvus_conn
+
 from utils.helpers import generate_id, read_file_content, get_all_json, read_json_file, collection_index_name_from_filename
+
 
 
 @celery.task(rate_limit='10/s')
@@ -114,3 +120,26 @@ def check_if_completed(session_id: str, count_of_lines: int):
             StatusKV.delete_lines_completed(session_id)
             break
         time.sleep(5)
+
+
+def load_into_milvus_collection(sesion_id: str):
+    
+    session_manager_object = SessionManager.get_session_details(sesion_id)
+    pg_to_milvus_object = PostgresToMilvus.get_mutiple_pg_milvus(sesion_id)
+    milvus_conn.establish_connection(app=app)
+    '''
+        First we get all the collection names for a particular session id. This can be done by querying the pg_to_milvus table. 
+        --> Use this to create the collection. Get the field names for this as well. 
+
+        Then we get all the log_to_embedding ids for a particular session id. This can be done by querying the pg_milvus_session_connect table.
+        --> Split this into the various categories and then load it into the collection. 
+
+        Put the various entities into the collection. 
+    '''
+    for pg_to_milvus in pg_to_milvus_object:
+        milvus_conn.create_collection(
+            collection_name=pg_to_milvus.collection_name, 
+            description="Collection for session id: {session_id} to build index: {pg_to_milvus.index_name}",
+        )
+        
+    return len(pg_to_milvus_object)

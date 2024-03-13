@@ -7,6 +7,8 @@ from sqlalchemy.exc import IntegrityError
 
 from models import database
 
+from services.milvus_service import milvus_conn, SemSearchMilvus
+
 class PostgresToMilvus(database.Model):
     
     __tablename__ = 'postgres_to_milvus'
@@ -47,6 +49,14 @@ class PostgresToMilvus(database.Model):
     def add_multiple_postgres_to_milvus(self, postgres_to_milvus_list):
         database.session.add_all(postgres_to_milvus_list)
         database.session.commit()
+
+    @staticmethod
+    def get_mutiple_pg_milvus(session_id):
+        return PostgresToMilvus.query.filter_by(session_id=session_id).all()
+    
+    def drop_milvus_collection(self):
+        milvus_conn.drop_collection(self.collection_name)
+        return True
 
 
 class PGMilvusSesssionConnect(database.Model):
