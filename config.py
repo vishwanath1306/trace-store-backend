@@ -27,6 +27,8 @@ def load_config(app: Flask, config_name: str = 'development'):
     app.config['CELERY_BROKER_URL'] = config[config_name]['CELERY_BROKER_URL']
     app.config['CELERY_RESULT_BACKEND'] = config[config_name]['CELERY_RESULT_BACKEND']
 
+    app.config['OPENAI_API_KEY'] = config[config_name]['OPENAI_KEY']
+    
     app.config['GOOGLE_API_KEY']   = config[config_name]['GCP_API_key']
     app.config['GOOGLE_MODEL_NAME'] = config[config_name]['GCP_MODEL_NAME']
 

@@ -34,12 +34,9 @@ class SemSearchMilvus(object):
     def insert_data(self, collection, entities):
         ins_data = collection.insert(entities)
         collection.flush()
-        print(
-            f"Inserted data into: {collection.name}. \nNumber of entities inserted: {collection.num_entities}"
-        )
         return ins_data
     
-    def create_index(collection, field_name, index_type, metric_type, params):
+    def create_index(self, collection, field_name, index_type, metric_type, params):
         index = {
             "index_type": index_type,
             "metric_type": metric_type,
@@ -48,11 +45,11 @@ class SemSearchMilvus(object):
         collection.create_index(field_name, index)
         print(f"Created index on {field_name} for collection: {collection.name}")
 
-    def search_and_query(collection, search_vectors, search_field, search_params):
+    def search_and_query(self, collection, search_vectors, limit, search_field, search_params):
         collection.load()
-
         results = collection.search(
-            search_vectors, search_field, search_params, limit=10, output_fields=["log_line"])
+            search_vectors, search_field, search_params, limit=limit, output_fields=["log_line"])
+
         return results
     
     def delete_collection(collection):
@@ -68,6 +65,13 @@ class SemSearchMilvus(object):
         return True
     
     def get_collection(self, collection_name: str):
-        return utility.get_collection(collection_name)
+        return Collection(collection_name)
+    
+    def get_log_lines(self, results):
+        log_line = []
+        for hits in results:
+            for hit in hits:
+                log_line.append(hit.entity.get('log_line'))
+        return log_line
     
 milvus_conn = SemSearchMilvus()

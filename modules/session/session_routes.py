@@ -6,7 +6,7 @@ from flask import current_app as app
 from models.session import SessionManager
 from models.status_kv import StatusKV
 from models.sessiontomilvus import PostgresToMilvus, PGMilvusSesssionConnect
-from modules.session.composed import verify_session_create, verify_manual_embedding_generation
+from modules.session.composed import verify_session_create, verify_manual_embedding_generation, query_logs_and_api_call
 
 from tasks.embeddings_gen import save_and_generate_embedding, load_existing_embedding, load_into_milvus_collection
 
@@ -118,10 +118,10 @@ def create_milvus_embedding():
 
     session_id = request_data.get('session_id')
     
-    pg_milvus_entries = load_into_milvus_collection(session_id)
+    load_into_milvus_collection.delay(session_id)
 
     message_dict = {
-        "message": pg_milvus_entries
+        "message": "Creating milvus embeddings"
     }
     return jsonify(message_dict), 201
 
@@ -141,3 +141,11 @@ def delete_milvus_collections():
     }
     return jsonify(message_dict), 200
 
+
+@session_bp.route('/query-logs', methods=["POST"])
+@query_logs_and_api_call
+def querying_logs(return_dict):
+    message_dict = {
+        "message": "Querying logs"
+    }
+    return jsonify(return_dict), 200

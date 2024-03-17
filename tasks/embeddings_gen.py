@@ -121,9 +121,10 @@ def check_if_completed(session_id: str, count_of_lines: int):
             break
         time.sleep(5)
 
-
+@celery.task
 def load_into_milvus_collection(sesion_id: str):
     
+    print("Loading into milvus collection")
     session_manager_object = SessionManager.get_session_details(sesion_id)
     pg_to_milvus_object = PostgresToMilvus.get_mutiple_pg_milvus(sesion_id)
     milvus_conn.establish_connection(app=app)
@@ -137,9 +138,17 @@ def load_into_milvus_collection(sesion_id: str):
         Put the various entities into the collection. 
     '''
     for pg_to_milvus in pg_to_milvus_object:
-        milvus_conn.create_collection(
-            collection_name=pg_to_milvus.collection_name, 
-            description="Collection for session id: {session_id} to build index: {pg_to_milvus.index_name}",
+        print(f"Working with collection: {pg_to_milvus.collection_name} and index: {pg_to_milvus.index_name}")
+        current_collection = milvus_conn.create_collection(
+                collection_name=pg_to_milvus.collection_name, 
+                description="Collection for session id: {session_id} to build index: {pg_to_milvus.index_name}",
+            )
+
+        pg_milvus_connect = PGMilvusSesssionConnect.get_all_pg_milvus_session_for_pg_milvus_id(pg_milvus_id=pg_to_milvus.id)
+        log_id_list = [x.log_to_embedding_id for x in pg_milvus_connect]
+        log_to_embedding_list = LogToEmbedding.get_log_to_embedding_milvus_format(log_id_list)
+        milvus_conn.insert_data(
+            collection=current_collection,
+            entities=log_to_embedding_list
         )
-        
-    return len(pg_to_milvus_object)
+        milvus_conn.create_index(current_collection, "embeddings", "IVF_FLAT", "L2", {"nlist": 768})    

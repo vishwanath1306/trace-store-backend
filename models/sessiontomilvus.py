@@ -58,6 +58,9 @@ class PostgresToMilvus(database.Model):
         milvus_conn.drop_collection(self.collection_name)
         return True
 
+    @staticmethod
+    def get_collection_for_session_collection_name(session_id, collection_name):
+        return PostgresToMilvus.query.filter_by(session_id=session_id, collection_name=collection_name).first()
 
 class PGMilvusSesssionConnect(database.Model):
 
@@ -96,4 +99,15 @@ class PGMilvusSesssionConnect(database.Model):
         database.session.add_all(pg_milvus_session_connect_list)
         database.session.commit()
     
+    @staticmethod
+    def get_pg_milvus_session_with_limit(limit: int):
+        return PGMilvusSesssionConnect.query.limit(limit).all()
+    
+    @staticmethod
+    def get_all_pg_milvus_session():
+        return PGMilvusSesssionConnect.query.all()
+    
+    @staticmethod
+    def get_all_pg_milvus_session_for_pg_milvus_id(pg_milvus_id):
+        return PGMilvusSesssionConnect.query.filter_by(pg_to_milvus_id=pg_milvus_id).all()
     

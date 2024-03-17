@@ -50,3 +50,18 @@ class LogToEmbedding(database.Model):
     def add_multiple_log_to_embedding(self, log_to_embedding_list: List['LogToEmbedding']):
         database.session.add_all(log_to_embedding_list)
         database.session.commit()
+
+    @staticmethod
+    def get_log_to_embedding(lte_id: str):
+
+        return database.session.query(LogToEmbedding).filter_by(id=lte_id).first()
+
+    @staticmethod
+    def get_log_to_embedding_milvus_format(lte_ids: List[str]):
+        log_lines = database.session.query(LogToEmbedding).filter(LogToEmbedding.id.in_(lte_ids)).all()
+        return_list = [ [], [], []]
+        for idx, log in enumerate(log_lines):
+            return_list[0].append(str(idx+1))
+            return_list[1].append(log.log_text)
+            return_list[2].append(log.embedding)
+        return return_list
