@@ -1,0 +1,15 @@
+DevelopmentConfig:
+  DEBUG: # boolean value goes here
+  SQLALCHEMY_DATABASE_URI: # database URI goes here
+  SQLALCHEMY_TRACK_MODIFICATIONS: # boolean value goes here
+  CELERY_BROKER_URL: # Celery broker URL goes here
+  CELERY_RESULT_BACKEND: # Celery result backend URL goes here
+  OPENAI_KEY: # OpenAI API key goes here
+  GCP_API_key: # Google Cloud API key goes here
+  GCP_MODEL_NAME: # Google Cloud model name goes here
+  JOBS_STORAGE:
+    HOST: # Jobs storage host goes here
+    PORT: # Jobs storage port goes here
+    DB: # Jobs storage database goes here
+  MILVUS_HOST: # Milvus host goes here
+  MILVUS_PORT: # Milvus port goes here
