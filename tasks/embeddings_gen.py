@@ -1,5 +1,6 @@
 import time
 from typing import List
+from datetime import datetime
 
 from flask import current_app as app
 
@@ -15,22 +16,13 @@ from modules.integrations.google_integration import google_text_embedding
 from services.milvus_service import milvus_conn
 
 from utils.helpers import generate_id, read_file_content, get_all_json, read_json_file, collection_index_name_from_filename
-
+from utils.parsers import parse_openstack_log_line
 
 
 @celery.task(rate_limit='10/s')
-def get_google_embedding(session_id: str, text_line: str):
+def get_google_embedding(session_id: str, log_text: List[str]):
+    return google_text_embedding(session_id, log_text)
 
-    embedding_text = google_text_embedding(text_line)
-    StatusKV.increment_session_id_lines_completed(session_id)
-    
-    log_to_embedding = LogToEmbedding(
-        id=generate_id(),
-        session_id=session_id,
-        log_text=text_line,
-        embedding=embedding_text
-    )
-    _ = log_to_embedding.create_new_log_to_embedding()
 
 @celery.task
 def save_and_generate_embedding(session_id: str, log_file_path: str):
@@ -43,10 +35,71 @@ def save_and_generate_embedding(session_id: str, log_file_path: str):
 
     check_if_completed.delay(session_id, len(log_text))
 
-    if session_details.embedding_method == EmbeddingMethod.GOOGLE:
-        for line in log_text:
-            get_google_embedding.delay(session_id, line)
-            time.sleep(1)
+    EMB_BATCH_SIZE = 128
+    DB_WRITE_BATCH_SIZE = 128 * 10
+    batch = []
+    
+    for idx in range(0, len(log_text), EMB_BATCH_SIZE):
+        start, end = idx, min(idx + EMB_BATCH_SIZE, len(log_text))
+        structured_logs = []
+        embedding_lines = []
+        for line in log_text[start:end]:
+            structured_log, embedding_line = parse_openstack_log_line(line)
+            structured_logs.append(structured_log)
+            embedding_lines.append(embedding_line)
+
+        if session_details.embedding_method == EmbeddingMethod.GOOGLE:
+            embeddings = get_google_embedding(session_id, embedding_lines)
+
+        for i, (structured_log, emb) in enumerate(zip(structured_logs, embeddings)):
+            batch.append(LogToEmbedding(
+                id=generate_id(),
+                session_id=session_id,
+                log_text=log_text[idx+i],
+                embedding=emb,
+                labels=structured_log['labels'],
+                structured_metadata=structured_log['structured_metadata'],
+                timestamp=datetime.fromisoformat(structured_log['timestamp'])
+            ))
+        
+            if len(batch) >= DB_WRITE_BATCH_SIZE:
+                batch[0].add_multiple_log_to_embedding(batch)
+                StatusKV.increment_session_id_lines_completed(session_id, len(batch))
+                batch = []
+    
+        if end == len(log_text) and batch:
+            batch[0].add_multiple_log_to_embedding(batch)
+            StatusKV.increment_session_id_lines_completed(session_id, len(batch))
+
+
+    # for line in log_text:
+    #     structured_log, embedding_line = parse_openstack_log_line(line)
+    #     structured_logs.append(structured_log)
+    #     embedding_lines.append(embedding_line)
+
+    # if session_details.embedding_method == EmbeddingMethod.GOOGLE:
+    #     embeddings = get_google_embedding(session_id, log_text)
+    
+
+    # for i, (structured_log, emb) in enumerate(zip(structured_logs, embeddings)):
+    #     batch.append(LogToEmbedding(
+    #         id=generate_id(),
+    #         session_id=session_id,
+    #         log_text=log_text[i],
+    #         embedding=emb,
+    #         labels=structured_log['labels'],
+    #         structured_metadata=structured_log['structured_metadata'],
+    #         timestamp=datetime.fromisoformat(structured_log['timestamp'])
+    #     ))
+        
+    #     if len(batch) >= DB_WRITE_BATCH_SIZE:
+    #         batch[0].add_multiple_log_to_embedding(batch)
+    #         StatusKV.increment_session_id_lines_completed(session_id, len(batch))
+    #         batch = []
+    
+    # if batch:
+    #     batch[0].add_multiple_log_to_embedding(batch)
+    #     StatusKV.increment_session_id_lines_completed(session_id, len(batch))
 
 
 @celery.task

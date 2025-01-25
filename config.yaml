@@ -1,0 +1,15 @@
+DevelopmentConfig:
+  DEBUG: true
+  SQLALCHEMY_DATABASE_URI: "postgresql://postgres:postgres@localhost/trace_store_db"
+  SQLALCHEMY_TRACK_MODIFICATIONS: false
+  CELERY_BROKER_URL: "redis://localhost:6379/0"
+  CELERY_RESULT_BACKEND: "redis://localhost:6379/1"
+  OPENAI_KEY: "your-openai-key"
+  GCP_API_key: "your-gcp-key"
+  GCP_MODEL_NAME: "text-bison@001"
+  JOBS_STORAGE:
+    HOST: "localhost"
+    PORT: 6379
+    DB: 2
+  MILVUS_HOST: "localhost"
+  MILVUS_PORT: 19530

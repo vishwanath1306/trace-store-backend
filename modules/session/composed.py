@@ -69,52 +69,36 @@ def verify_manual_embedding_generation(func):
 def query_logs_and_api_call(func):
     @wraps(func)
     def decorated_function(*args, **kwargs):
-
         request_data = request.get_json()
-
         session_id = request_data.get('session_id')
         query_string = request_data.get('query_string')
-        index_names = request_data.get('index_names')
-
-        final_result_values = []
-        final_log_lines = []
-
-        for names in index_names:
-            collection_name = collection_index_name_from_filename(names)[0]
-            pg_milvus_item = PostgresToMilvus.get_collection_for_session_collection_name(
-                    session_id, 
-                    collection_name
-            )
-
-            if pg_milvus_item != None:
-                curr_collection = milvus_conn.get_collection(pg_milvus_item.collection_name)
-                query_embedding = google_text_embedding(query_string)
-
-                result_array = milvus_conn.search_and_query(
-                    collection=curr_collection,
-                    search_vectors=[query_embedding],
-                    limit=50,
-                    search_field="embeddings",
-                    search_params={"metric_type": "L2", "params": {"nprobe": 10}})
-                
-                log_lines = milvus_conn.get_log_lines(result_array)
-                final_log_lines.append({
-                    "index_name": pg_milvus_item.index_name,
-                    "log_lines": log_lines
-                })
-
-                prompt_text = convert_to_prompt_base(log_lines)
-                extracted_log_lines = call_openai_api_log_file(prompt_text)
-                
-                prompt_text_2 = convert_to_prompt_ipaddr(extracted_log_lines, query_string)
-                final_return_value = call_openai_api_log_file(prompt_text_2)
-                final_result_values.append(final_return_value)
         
+        query_embedding = google_text_embedding(query_string)
+        
+        from models.logtoembedding import LogToEmbedding
+        similar_logs = LogToEmbedding.cosine_similarity_search(query_embedding, limit=10)
+        
+        final_log_lines = []
+        for log in similar_logs:
+            final_log_lines.append({
+                "log_text": log.log_text,
+                "similarity": float(log.similarity),
+                "created_at": log.created_at.isoformat()
+            })
+
+        # Process with OpenAI if needed
+        final_result_values = []
+        # if final_log_lines:
+        #     prompt_text = convert_to_prompt_base([log["log_text"] for log in final_log_lines])
+        #     extracted_log_lines = call_openai_api_log_file(prompt_text)
+            
+        #     prompt_text_2 = convert_to_prompt_ipaddr(extracted_log_lines, query_string)
+        #     final_result_values.append(call_openai_api_log_file(prompt_text_2))
+
         return_dict = {
             "log_lines": final_log_lines,
             "result_value": final_result_values
         }
-        
 
         return func(return_dict)
     return decorated_function

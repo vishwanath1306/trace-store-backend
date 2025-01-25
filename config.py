@@ -8,7 +8,7 @@ import yaml
 
 
 def load_config(app: Flask, config_name: str = 'development'):
-    file_name = os.path.join(os.path.dirname(__file__), 'config.yml')
+    file_name = os.path.join(os.path.dirname(__file__), 'config.yaml')
     config_file = open(file_name, 'r')
     all_config_dict: Dict = yaml.load(config_file, Loader=yaml.FullLoader)
     config_file.close()
