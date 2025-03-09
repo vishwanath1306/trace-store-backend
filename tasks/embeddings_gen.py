@@ -16,10 +16,10 @@ from modules.integrations.google_integration import google_text_embedding
 from services.milvus_service import milvus_conn
 
 from utils.helpers import generate_id, read_file_content, get_all_json, read_json_file, collection_index_name_from_filename
-from utils.parsers import parse_openstack_log_line
+from utils.parsers import get_parser_for_application
 
 
-@celery.task(rate_limit='10/s')
+@celery.task(rate_limit='100/s')
 def get_google_embedding(session_id: str, log_text: List[str]):
     return google_text_embedding(session_id, log_text)
 
@@ -35,6 +35,11 @@ def save_and_generate_embedding(session_id: str, log_file_path: str):
 
     check_if_completed.delay(session_id, len(log_text))
 
+    application_name = session_details.application_name
+    parser_function = get_parser_for_application(application_name)
+
+    app.logger.info(f"Using parser for application: {application_name}")
+
     EMB_BATCH_SIZE = 128
     DB_WRITE_BATCH_SIZE = 128 * 10
     batch = []
@@ -44,7 +49,7 @@ def save_and_generate_embedding(session_id: str, log_file_path: str):
         structured_logs = []
         embedding_lines = []
         for line in log_text[start:end]:
-            structured_log, embedding_line = parse_openstack_log_line(line)
+            structured_log, embedding_line = parser_function(line)
             structured_logs.append(structured_log)
             embedding_lines.append(embedding_line)
 

@@ -1,0 +1,13 @@
+flask
+flask-cors
+flask-sqlalchemy
+sqlalchemy
+psycopg2-binary
+celery
+redis
+pyyaml
+pymilvus
+openai
+pgvector
+numpy
+requests

@@ -5,7 +5,7 @@ from typing import Dict, Union, Tuple, List
 from flask import current_app as app
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from pgvector.sqlalchemy import VECTOR
+from pgvector.sqlalchemy import Vector
 
 from models import database
 
@@ -15,7 +15,7 @@ class LogToEmbedding(database.Model):
 
     id = database.Column(database.String(128), primary_key=True, nullable=False)
     log_text = database.Column(database.String(1024), nullable=False)
-    embedding = database.Column(VECTOR(768), nullable=False)
+    embedding = database.Column(Vector(768), nullable=False)
     
     # New columns for structured data
     labels = database.Column(database.JSON, nullable=False)
@@ -76,10 +76,21 @@ class LogToEmbedding(database.Model):
     
     @staticmethod
     def l2_distance_search(query_embedding: List[float], limit: int = 10):
-        return (LogToEmbedding.query
+        results = (LogToEmbedding.query
+                .with_entities(
+                    LogToEmbedding,
+                    LogToEmbedding.embedding.l2_distance(query_embedding).label('distance')
+                )
                 .order_by(LogToEmbedding.embedding.l2_distance(query_embedding))
                 .limit(limit)
                 .all())
+        
+        # Add distance score to each LogToEmbedding object
+        for log, distance in results:
+            log.similarity = 1.0 - distance 
+        
+        # Return just the LogToEmbedding objects with distance scores attached
+        return [log for log, _ in results]
 
 
     def add_multiple_log_to_embedding(self, log_to_embedding_list: List['LogToEmbedding']):

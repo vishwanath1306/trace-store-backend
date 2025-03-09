@@ -69,3 +69,4 @@ def parse_openstack_log_line(log_line: str) -> Dict[str, Any]:
     formatted_string += data['content'].strip()
 
     return parsed_data, formatted_string
+

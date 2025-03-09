@@ -73,10 +73,14 @@ def query_logs_and_api_call(func):
         session_id = request_data.get('session_id')
         query_string = request_data.get('query_string')
         
-        query_embedding = google_text_embedding(query_string)
+        query_embedding = google_text_embedding(session_id, [query_string])
         
+        if isinstance(query_embedding, list):
+            query_embedding = query_embedding[0]
+
         from models.logtoembedding import LogToEmbedding
-        similar_logs = LogToEmbedding.cosine_similarity_search(query_embedding, limit=10)
+        similar_logs = LogToEmbedding.l2_distance_search(query_embedding, limit=10)
+        # similar_logs = LogToEmbedding.cosine_similarity_search(query_embedding, limit=10)
         
         final_log_lines = []
         for log in similar_logs:

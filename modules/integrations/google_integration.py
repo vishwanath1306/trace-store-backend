@@ -1,9 +1,10 @@
 from flask import current_app as app
-from llama_index.embeddings.google import GooglePaLMEmbedding
-from sentence_transformers import SentenceTransformer
+# from llama_index.embeddings.google import GooglePaLMEmbedding
+# from sentence_transformers import SentenceTransformer
 from typing import List
 from models.status_kv import StatusKV
 import numpy as np
+import requests
 
 # def google_text_embedding(text: str):
 #     embed_model = GooglePaLMEmbedding(model_name=app.config['GOOGLE_MODEL_NAME'], api_key=app.config['GOOGLE_API_KEY'])
@@ -35,30 +36,48 @@ import numpy as np
 
 
 def google_text_embedding(session_id: str, log_text: List[str]):
-    embed_model = SentenceTransformer('all-mpnet-base-v2', device='cuda')
-    
-    batch_size = min(128, len(log_text))
-    total_batches = (len(log_text) + batch_size - 1) // batch_size
-    
-    all_embeddings = []
-
-    for batch_num in range(total_batches):
-        start_idx = batch_num * batch_size
-        end_idx = min(start_idx + batch_size, len(log_text))
-
-        batch_sentences = log_text[start_idx:end_idx]
-        batch_embeddings = embed_model.encode(
-            batch_sentences, 
-            show_progress_bar=False
-        )
+    # embed_model = SentenceTransformer('all-mpnet-base-v2', device='cuda')
+    # embed_model = SentenceTransformer('/home/ishan/work/embeddinglogs/models/log-triplet-model', device='cuda')
+    # embed_model = SentenceTransformer("ishandotsh/logembed_a1", device='cuda')
         
-        StatusKV.increment_session_id_lines_completed(session_id, len(batch_sentences))
+    # batch_size = min(128, len(log_text))
+    # total_batches = (len(log_text) + batch_size - 1) // batch_size
+    
+    # all_embeddings = []
+
+    # for batch_num in range(total_batches):
+    #     start_idx = batch_num * batch_size
+    #     end_idx = min(start_idx + batch_size, len(log_text))
+
+    #     batch_sentences = log_text[start_idx:end_idx]
+    #     batch_embeddings = embed_model.encode(
+    #         batch_sentences, 
+    #         show_progress_bar=False
+    #     )
         
-        all_embeddings.append(batch_embeddings)
+    #     StatusKV.increment_session_id_lines_completed(session_id, len(batch_sentences))
+        
+    #     all_embeddings.append(batch_embeddings)
     
-    if all_embeddings:
-        embeddings_array = np.vstack(all_embeddings)
-    else:
-        embeddings_array = np.array([]).reshape(0,0)
+    # if all_embeddings:
+    #     embeddings_array = np.vstack(all_embeddings)
+    # else:
+    #     embeddings_array = np.array([]).reshape(0,0)
     
-    return embeddings_array.astype(float).tolist()
+    # return embeddings_array.astype(float).tolist()
+
+    EMBED_SERVICE_URL = "http://localhost:5200/embed"
+    
+    # Single request with all text
+    response = requests.post(
+        EMBED_SERVICE_URL,
+        json={'text': log_text}
+    )
+    
+    if response.status_code != 200:
+        raise Exception(f"Embedding service error: {response.json().get('error', 'Unknown error')}")
+        
+    # Update progress for all processed lines
+    StatusKV.increment_session_id_lines_completed(session_id, len(log_text))
+    
+    return response.json()['embeddings']
