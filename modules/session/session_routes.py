@@ -35,8 +35,7 @@ def create_session(session_details: Dict):
 
     store_file(session_details['request_file'], file_name)
     value, message = session_manager.create_new_session()
-    save_and_generate_embedding.delay(sess_id, f"{app.config['TEMP_FILE_UPLOAD_FOLDER']}/{sess_id}.log")
-
+    save_and_generate_embedding.delay(sess_id, file_name)
     if not value:
         return jsonify({'message': message['message']}), 400
     else:
@@ -45,7 +44,7 @@ def create_session(session_details: Dict):
             "session_id": sess_id
         }
         return jsonify(message_dict), 201
-
+    
 
 @session_bp.route('/details', methods=['GET'])
 def get_session_details():
@@ -69,77 +68,30 @@ def get_current_status():
         }
         return jsonify(message_dict), 200
     else:
-        message_dict = {
-            "session_id": sess_id,
-            "status": False,
-            "message": "Index construction in progress"
-        }
-        return jsonify(message_dict), 200
-
-
-@session_bp.route('/manual-embedding-generation', methods=['POST'])
-@verify_manual_embedding_generation
-def manual_embedding_generation(session_details: Dict):
-    sess_id = generate_id()
-    session_manager = SessionManager(
-        id=sess_id,
-        name=session_details['session_name'],
-        vector_store=session_details['vector_database'],
-        embedding_method=session_details['embedding_method'],
-        application_name=session_details['application_name'],
-    )
-    path_value = f"{app.config['EMBEDDING_FOLDER']}/{session_details['app_to_embedding']}/"
-    
-    
-    
-    value, message = session_manager.create_new_session()
-
-    load_existing_embedding.delay(sess_id, path_value)
-
-    if not value:
-        return jsonify({'message': message['message']}), 400
-    else:
-        message_dict = {
-            "message": message['message'],
-            "session_id": sess_id
-        }
-        return jsonify(message_dict), 201
+        try:
+            lines_completed = StatusKV.get_lines_completed(sess_id)
+            
+            message_dict = {
+                "session_id": sess_id,
+                "status": False,
+                "message": "Index construction in progress",
+                "progress": lines_completed
+            }
+            return jsonify(message_dict), 200
+        except:
+            message_dict = {
+                "session_id": sess_id,
+                "status": False,
+                "message": "Index construction in progress",
+                "progress": 0
+            }
+            return jsonify(message_dict), 200
 
 
 @session_bp.route('/get-all-sessions', methods=['GET'])
 def get_all_sessions():
     all_sessions = SessionManager.get_all_session()
     return jsonify(all_sessions), 200
-
-
-@session_bp.route('/create-milvus-embedding', methods=['POST'])
-def create_milvus_embedding():
-    request_data = request.get_json()
-
-    session_id = request_data.get('session_id')
-    
-    load_into_milvus_collection.delay(session_id)
-
-    message_dict = {
-        "message": "Creating milvus embeddings"
-    }
-    return jsonify(message_dict), 201
-
-
-@session_bp.route('/delete-milvus-collections', methods=['POST'])
-def delete_milvus_collections():
-
-    request_data = request.get_json()
-    session_id = request_data.get('session_id')
-
-    pg_milvus_entries = PostgresToMilvus.get_mutiple_pg_milvus(session_id)
-    for pg_milvus in pg_milvus_entries:
-        pg_milvus.drop_milvus_collection()
-    
-    message_dict = {
-        "message": "Collections deleted"
-    }
-    return jsonify(message_dict), 200
 
 
 @session_bp.route('/query-logs', methods=["POST"])

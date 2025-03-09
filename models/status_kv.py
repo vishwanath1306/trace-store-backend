@@ -36,9 +36,9 @@ class StatusKV(object):
         return retval
     
     @staticmethod
-    def increment_session_id_lines_completed(session_id):
+    def increment_session_id_lines_completed(session_id, amount = 1):
         try:
-            cache.jobs_storage.incr(session_id)
+            cache.jobs_storage.incr(session_id, amount)
         except Exception as e:
             raise RedisRuntimeError(f"Unable to run increment_session_id_lines_completed due to: {e}")
     

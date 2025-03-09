@@ -1,0 +1,94 @@
+START
+
+curl -X POST http://localhost:5000/api/v1/session/create \
+-F "session_name=test_session_local" \
+-F "vector_database=Milvus" \
+-F "embedding_method=Google" \
+-F "application_name=openstack" \
+-F "request_file=@/home/ishan/work/embeddinglogs/dataset/raw/OpenStack/OpenStack_full.log"
+
+curl -X POST http://localhost:5000/api/v1/session/create \
+-F "session_name=test_session_local2" \
+-F "vector_database=Milvus" \
+-F "embedding_method=Google" \
+-F "application_name=openssh" \
+-F "request_file=@/home/ishan/work/embeddinglogs/dataset/raw/OpenSSH/OpenSSH_full.log"
+
+DETAILS
+curl http://localhost:5000/api/v1/session/details?session_id=9541c66c-0717-4c06-9e82-9a5ae0c0e93a
+
+
+STATUS
+curl http://localhost:5000/api/v1/session/current-status?session_id=9541c66c-0717-4c06-9e82-9a5ae0c0e93a
+
+
+QUERY
+curl -X POST http://localhost:5000/api/v1/session/query-logs \
+-H "Content-Type: application/json" \
+-d '{
+  "session_id": "9541c66c-0717-4c06-9e82-9a5ae0c0e93a",
+  "query_string": "error in authentication"
+}'
+
+
+
+Session 3 OpenStack
+
+e0b42d3c-88fc-4f44-bb73-86b52b60b334
+
+curl -X POST http://localhost:5000/api/v1/session/create \
+-F "session_name=session_3" \
+-F "vector_database=Milvus" \
+-F "embedding_method=Google" \
+-F "application_name=openstack" \
+-F "request_file=@/home/ishan/work/embeddinglogs/dataset/raw/OpenStack/OpenStack_full.log"
+
+curl http://localhost:5000/api/v1/session/current-status?session_id=e0b42d3c-88fc-4f44-bb73-86b52b60b334
+
+curl -X POST http://localhost:5000/api/v1/session/query-logs \
+-H "Content-Type: application/json" \
+-d '{
+  "session_id": "e0b42d3c-88fc-4f44-bb73-86b52b60b334",
+  "query_string": "error in authentication"
+}'
+
+Session 4 OpenSSH
+
+550b13c4-68c0-40aa-8824-937a9d47397d
+
+curl -X POST http://localhost:5000/api/v1/session/create \
+-F "session_name=session_4_openssh" \
+-F "vector_database=Milvus" \
+-F "embedding_method=Google" \
+-F "application_name=openssh" \
+-F "request_file=@/home/ishan/work/embeddinglogs/dataset/raw/OpenSSH/OpenSSH_full.log"
+
+curl http://localhost:5000/api/v1/session/current-status?session_id=550b13c4-68c0-40aa-8824-937a9d47397d
+
+curl -X POST http://localhost:5000/api/v1/session/query-logs \
+-H "Content-Type: application/json" \
+-d '{
+  "session_id": "550b13c4-68c0-40aa-8824-937a9d47397d",
+  "query_string": "connection error"
+}'
+
+
+Session 5 HDFS
+
+a75225b0-b2e9-4488-bb72-a020a36354d0
+
+curl -X POST http://localhost:5000/api/v1/session/create \
+-F "session_name=session_4_openssh" \
+-F "vector_database=Milvus" \
+-F "embedding_method=Google" \
+-F "application_name=hdfs" \
+-F "request_file=@/home/ishan/work/embeddinglogs/dataset/raw/HDFS/HDFS_full.log"
+
+curl http://localhost:5000/api/v1/session/current-status?session_id=a75225b0-b2e9-4488-bb72-a020a36354d0
+
+curl -X POST http://localhost:5000/api/v1/session/query-logs \
+-H "Content-Type: application/json" \
+-d '{
+  "session_id": "a75225b0-b2e9-4488-bb72-a020a36354d0",
+  "query_string": "blockmap update"
+}'
