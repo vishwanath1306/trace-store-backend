@@ -9,7 +9,8 @@ app = Flask(__name__)
 # Load the model globally so it's only loaded once
 # model = SentenceTransformer('ishandotsh/logembed_a1', device='cuda')
 # model = SentenceTransformer('../embeddinglogs/models/logembed_a2_20250302_205530/', device='cuda')
-model = SentenceTransformer('../embeddinglogs/models/logembed_a3_20250307_145500/', device='cuda')
+# model = SentenceTransformer('../embeddinglogs/models/logembed_a3_20250307_145500/', device='cuda')
+model = SentenceTransformer('ishandotsh/logembed_a2', device='cuda')
 @app.route('/embed', methods=['POST'])
 def embed():
     try:
